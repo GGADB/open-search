@@ -40,22 +40,37 @@ WebSearch 返回空结果、报错、或搜索失败时，自动启用。
 Agent 执行以下检测，**发现缺失自动安装**：
 
 ```bash
-# 1. 浏览器在跑吗？
+# 1. 浏览器在跑吗？（优先连已有的）
 curl -s http://127.0.0.1:9333/json/version
-# 没响应 → 自动启动浏览器：
+# 有响应 → 直接用，不启动新的
 
-# Windows: 找 Chrome 或 Edge
-for /f "tokens=*" %%p in ('where chrome.exe 2^>nul') do set "BP=%%p"
-if not defined BP for /f "tokens=*" %%p in ('where msedge.exe 2^>nul') do set "BP=%%p"
-start "" "%BP%" --remote-debugging-port=9333 --no-first-run --user-data-dir="%TEMP%\opensearch-profile"
+# 没响应 → 尝试启动用户已有的浏览器（复用已有配置、登录态、扩展）
 
-# macOS/Linux:
-google-chrome --remote-debugging-port=9333 --no-first-run --user-data-dir=/tmp/opensearch-profile &
+# Windows:
+# Chrome 默认配置路径
+set "CHROME_PROFILE=%LOCALAPPDATA%\Google\Chrome\User Data"
+# Edge 默认配置路径
+set "EDGE_PROFILE=%LOCALAPPDATA%\Microsoft\Edge\User Data"
+
+# 用用户自己的配置启动（保留登录态和扩展）
+start "" "chrome.exe" --remote-debugging-port=9333 --no-first-run --user-data-dir="%CHROME_PROFILE%"
 # 或
-/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9333 --no-first-run --user-data-dir=/tmp/opensearch-profile &
+start "" "msedge.exe" --remote-debugging-port=9333 --no-first-run --user-data-dir="%EDGE_PROFILE%"
+
+# macOS:
+open -a "Google Chrome" --args --remote-debugging-port=9333
+# 或
+open -a "Microsoft Edge" --args --remote-debugging-port=9333
+
+# Linux:
+google-chrome --remote-debugging-port=9333 &
 
 # 等待就绪
 sleep 5
+```
+
+**关键：不要用 `--user-data-dir=/tmp/xxx`，直接用用户默认配置目录。**
+这样浏览器会保留用户已有的：登录态、已安装扩展、书签、历史记录。
 
 # 2. OpenCLI 装了吗？
 where opencli 2>nul

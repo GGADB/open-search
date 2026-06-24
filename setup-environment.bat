@@ -65,14 +65,18 @@ if %errorlevel% equ 0 (
 )
 
 REM ============================================
-REM 启动浏览器
+REM 启动浏览器（复用用户已有配置）
 REM ============================================
 echo [i] 启动 %BROWSER_NAME% 并启用远程调试...
 
-if not exist "%USERPROFILE%\open-search-profile" mkdir "%USERPROFILE%\open-search-profile" >nul 2>&1
+if "%BROWSER_NAME%"=="Edge" (
+    set "USER_PROFILE=%LOCALAPPDATA%\Microsoft\Edge\User Data"
+) else (
+    set "USER_PROFILE=%LOCALAPPDATA%\Google\Chrome\User Data"
+)
 
 start "" /b "%BROWSER_PATH%" ^
-    --user-data-dir="%USERPROFILE%\open-search-profile" ^
+    --user-data-dir="%USER_PROFILE%" ^
     --remote-debugging-port=%CDP_PORT% ^
     --remote-allow-origins=* ^
     --no-first-run

@@ -446,14 +446,19 @@ install_browser_extension() {
   BROWSER_PATH=$(get_browser_path)
   BROWSER_NAME=$(get_browser_name)
 
-  # 创建启动脚本
+  # 创建启动脚本（复用用户已有配置）
   case $OS in
     "windows")
+      if [ "$BROWSER_NAME" = "Edge" ]; then
+        WIN_PROFILE='%LOCALAPPDATA%\\Microsoft\\Edge\\User Data'
+      else
+        WIN_PROFILE='%LOCALAPPDATA%\\Google\\Chrome\\User Data'
+      fi
       cat > "$SCRIPT_DIR/start-browser.bat" << EOF
 @echo off
-REM 启动 $BROWSER_NAME 并加载扩展
+REM 启动 $BROWSER_NAME（复用已有配置）
 echo 启动 $BROWSER_NAME...
-start "" "$BROWSER_PATH" --user-data-dir="%USERPROFILE%\\open-search-profile" --remote-debugging-port=9333 --remote-allow-origins=* --no-first-run --load-extension="$EXTENSION_DIR"
+start "" "$BROWSER_PATH" --user-data-dir="$WIN_PROFILE" --remote-debugging-port=9333 --remote-allow-origins=* --no-first-run --load-extension="$EXTENSION_DIR"
 echo 等待浏览器就绪...
 timeout /t 3 /nobreak >nul
 curl -s http://127.0.0.1:9333/json/version >nul 2>&1 && echo 浏览器已就绪 || echo 浏览器启动中，请稍候...
@@ -463,12 +468,17 @@ EOF
       log_action "已创建Windows启动脚本"
       ;;
     "macos"|"linux")
+      if [[ "$BROWSER_NAME" == "Edge" ]]; then
+        UNIX_PROFILE="\$HOME/.config/microsoft-edge"
+      else
+        UNIX_PROFILE="\$HOME/.config/google-chrome"
+      fi
       cat > "$SCRIPT_DIR/start-browser.sh" << EOF
 #!/bin/bash
-# 启动 $BROWSER_NAME 并加载扩展
+# 启动 $BROWSER_NAME（复用已有配置）
 echo "启动 $BROWSER_NAME..."
 "$BROWSER_PATH" \\
-    --user-data-dir="\$HOME/open-search-profile" \\
+    --user-data-dir="$UNIX_PROFILE" \\
     --remote-debugging-port=9333 \\
     --remote-allow-origins=* \\
     --no-first-run \\
