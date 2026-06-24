@@ -156,7 +156,7 @@ browser-harness --doctor
 
 ## 许可证
 
-MIT License
+[Apache License 2.0](LICENSE)
 
 ## 相关项目
 
