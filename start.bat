@@ -120,7 +120,7 @@ echo ==========================================
 echo 启动完成
 echo ==========================================
 echo.
-echo 在 Claude Code 中使用：
+echo 在你的 AI Agent 中使用：
 echo   /opensearch 搜索内容
 echo   用开放搜索来搜索xxx
 echo.

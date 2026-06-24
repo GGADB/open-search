@@ -196,7 +196,7 @@ echo.
 echo   1. 双击运行: start-browser.bat
 echo      （启动 %BROWSER_NAME% 并启用远程调试）
 echo.
-echo   2. 在 Claude Code 中使用:
+echo   2. 在你的 AI Agent 中使用:
 echo      /opensearch 帮我搜索xxx
 echo      用开放搜索来搜xxx
 echo.
@@ -261,7 +261,7 @@ REM ============================================
 echo.
 echo 【使用方法】
 echo   1. 双击运行: start-browser.bat
-echo   2. 在 Claude Code 中: /opensearch 搜索内容
+echo   2. 在你的 AI Agent 中: /opensearch 搜索内容
 echo.
 pause
 exit /b 0

@@ -1,8 +1,10 @@
 # OpenSearch
 
-给 Claude Code 加个搜索能力。
+给 AI Agent 加个搜索能力。
 
 WebSearch 搜不到的时候，OpenSearch 自动顶上。支持 B站、YouTube、Google、GitHub、知乎、淘宝等 155+ 个网站。
+
+适用于 Claude Code、Codex、Cursor 等支持 skill 的 AI Agent。
 
 ## 用法
 
