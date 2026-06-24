@@ -35,32 +35,30 @@ WebSearch 返回空结果、报错、或搜索失败时，自动启用。
   └── 3. 返回结果
 ```
 
-### 步骤1：连接用户已有浏览器
+### 步骤1：连接浏览器
 
-**核心原则：不启动新浏览器，连接用户已有的 Chrome/Edge（保留登录态和扩展）。**
+**核心原则：用固定配置目录启动 Chrome/Edge，保留登录态。**
 
 ```bash
-# 1. 先检查 CDP 是否可用
+# 1. 检查 CDP 是否可用
 curl -s http://127.0.0.1:9333/json/version
-# 有响应 → 直接用，用户的登录态和扩展都在
+# 有响应 → 直接用
 
-# 2. 没响应 → 检查 DevToolsActivePort 文件
-cat "%LOCALAPPDATA%\Google\Chrome\User Data\DevToolsActivePort" 2>/dev/null
-# 读取端口号，尝试连接
+# 2. 没响应 → 启动浏览器（用固定配置目录）
+# Windows:
+"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9333 --remote-allow-origins=* --user-data-dir="C:\Users\{用户名}\opensearch-profile"
 
-# 3. 都不行 → Chrome 没有开启 CDP，需要引导用户重启
+# macOS:
+open -a "Google Chrome" --args --remote-debugging-port=9333 --user-data-dir="$HOME/opensearch-profile"
+
+# Linux:
+google-chrome --remote-debugging-port=9333 --user-data-dir="$HOME/opensearch-profile" &
 ```
 
-**当 CDP 不可用时，Agent 引导用户一键重启：**
-
-```bash
-# 用户只需执行一行命令（Agent 帮忙生成）
-"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9333 --remote-allow-origins=* --user-data-dir="%LOCALAPPDATA%\Google\Chrome\User Data"
-```
-
-或者双击 `restart-chrome-cdp.bat` 一键重启。
-
-**关键：Chrome 保持运行，以后 Agent 自动连接，不需要再重启。**
+**关键：使用 `opensearch-profile` 固定目录，登录态会持久保存。**
+- 第一次：用户登录 → 状态保存到 opensearch-profile
+- 第二次：自动恢复登录态
+- 关闭再打开：登录态还在
 
 **为什么不能自动启动新实例？**
 - Chrome 已经在运行时，新实例无法绑定 CDP 端口
