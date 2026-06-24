@@ -8,264 +8,134 @@ allowed-tools: Bash(opencli:*), Bash(browser-harness:*), Bash(python:*), Bash(cu
 
 ## 触发条件
 
-### 自动触发（作为websearch的备选）
-当 WebSearch 工具返回空结果、报错、或搜索失败时，**自动启用开放搜索作为备选方案**。
+### 自动触发
+WebSearch 返回空结果、报错、或搜索失败时，自动启用。
 
 ### 手动触发
-- **斜杠命令**：`/opensearch <搜索请求>`
-  - 示例：`/opensearch 帮我去找一部有关友情的短视频`
-- **自然语言**：`用开放搜索` 或 `开放搜索`
-  - 示例：`用开放搜索来帮我去找一部有关友情的短视频`
+- `/opensearch <搜索请求>`
+- 自然语言：`用开放搜索` / `开放搜索`
 
-## 首次调用检测（重要）
+## 执行流程（Agent 全自动）
 
-**每次调用此 skill 时，必须先执行以下检测：**
+**用户只需输入搜索请求，Agent 自动完成所有步骤：**
 
-### 检测步骤
+```
+用户：/opensearch 帮我搜一下秋明sweet的最新视频
+  │
+  ├── 1. 检测环境（自动）
+  │   ├── 浏览器在跑吗？→ 没有就自动启动
+  │   ├── CDP 通吗？→ 不通就等它起来
+  │   ├── OpenCLI 装了吗？→ 没装就自动装
+  │   └── Browser Harness 装了吗？→ 没装就自动装
+  │
+  ├── 2. 路由搜索（自动）
+  │   ├── OpenCLI 有适配器？→ 用 OpenCLI
+  │   └── 没有？→ 用 Browser Harness
+  │
+  └── 3. 返回结果
+```
+
+### 步骤1：环境检测与自动修复
+
+Agent 执行以下检测，**发现缺失自动安装**：
 
 ```bash
-# 1. 检查 OpenCLI 是否安装
-where opencli 2>nul
-# 退出码0 = 已安装，非0 = 未安装
-
-# 2. 检查 OpenCLI 扩展是否连接
-opencli doctor 2>nul
-# 看输出中 "Extension: connected" 还是 "Extension: not connected"
-```
-
-### 检测结果处理
-
-**情况A：OpenCLI 未安装**
-```
-输出提醒：
-"OpenCLI 未安装。当前使用 Browser Harness 模式，搜索功能正常。
-如需安装 OpenCLI（获取更快的结构化搜索），请运行：
-  npm install -g @jackwener/opencli
-安装后在 Chrome/Edge 中加载扩展：chrome://extensions"
-```
-
-**情况B：OpenCLI 已安装但扩展未连接**
-```
-输出提醒：
-"OpenCLI 扩展未连接。当前使用 Browser Harness 模式，搜索功能正常。
-如需启用 OpenCLI 扩展（获取更快的结构化搜索），请：
-  1. 打开浏览器，访问 chrome://extensions
-  2. 找到 'OpenCLI' 扩展，确保已启用
-  3. 如未安装，点击'加载已解压的扩展程序'，选择：
-     {skill目录}/vendor/chrome-extension
-完成后运行：opencli daemon restart"
-```
-
-**情况C：OpenCLI 已安装且扩展已连接**
-```
-正常执行，无需提醒
-```
-
-### 提醒规则
-
-1. **首次调用时**：必须执行检测并输出对应提醒（情况A或B）
-2. **后续调用时**：如已检测过且状态未变，不重复提醒
-3. **提醒后继续执行**：无论 OpenCLI 状态如何，都继续执行搜索（Browser Harness 兜底）
-4. **不要阻断流程**：提醒只是信息，不暂停执行
-
-### 完整首次调用流程
-
-```
-用户：/opensearch 帮我搜索xxx
-  │
-  ├── 1. 执行环境检测（opencli doctor）
-  │
-  ├── 2. 如果扩展未连接 → 输出提醒（不阻断）
-  │
-  ├── 3. 继续执行搜索路由
-  │   ├── OpenCLI 可用 → 用 OpenCLI
-  │   └── OpenCLI 不可用 → 用 Browser Harness
-  │
-  └── 4. 返回搜索结果
-```
-
-## 浏览器兼容性
-
-| 浏览器 | OpenCLI | Browser Harness | 状态 |
-|--------|---------|-----------------|------|
-| Chrome | ✅ 完整支持 | ✅ 支持 | 首选 |
-| Edge | ⚠️ 需手动启用扩展 | ✅ 原生支持 | 完全可用 |
-| 其他 Chromium | ⚠️ 未测试 | ✅ 可能可用 | 实验性 |
-
-**只有 Edge 也能正常使用**：Browser Harness 原生支持 Edge，自动检测 Edge 路径和配置。
-
-## 即装即用指南
-
-### 首次使用（3步完成）
-
-```
-步骤1: 双击运行 check-and-install.bat
-        → 自动检测浏览器（Chrome/Edge）
-        → 自动安装 OpenCLI 和 Browser Harness
-        → 自动生成启动脚本
-
-步骤2: 双击运行 start-browser.bat
-        → 启动浏览器并启用远程调试（CDP）
-
-步骤3: 在 Claude Code 中使用
-        /opensearch 搜索内容
-        用开放搜索来搜索xxx
-```
-
-### 自动检测逻辑
-
-```
-check-and-install.bat 运行
-  │
-  ├── 检测 Chrome → 找到？→ 使用 Chrome
-  │
-  ├── 检测 Edge → 找到？→ 使用 Edge
-  │
-  └── 都没找到 → 提示安装浏览器
-```
-
-### Edge 用户特别说明
-
-Edge 用户无需额外配置：
-- Browser Harness **原生支持 Edge**，自动检测 `msedge.exe`
-- OpenCLI 扩展**可能**在 Edge 中工作（Edge 是 Chromium 内核）
-- 如果 OpenCLI 扩展不工作，自动回退到 Browser Harness 模式
-- 两种模式都能正常搜索
-
-## 双引擎路由策略
-
-```
-搜索请求
-  │
-  ├── 1. 解析请求，确定目标网站和关键词
-  │
-  ├── 2. OpenCLI 有该网站适配器？
-  │   ├── 是 → 执行 opencli <site> search "<query>" -f json
-  │   │   ├── 成功 → 返回结构化结果
-  │   │   └── 失败 → 转步骤3
-  │   └── 否 → 转步骤3
-  │
-  └── 3. Browser Harness 兜底
-      └── 生成脚本，模拟浏览器操作搜索
-```
-
-## 执行流程
-
-### 步骤1：检查环境
-
-```bash
-# 检查 CDP 连接（Chrome 或 Edge）
+# 1. 浏览器在跑吗？
 curl -s http://127.0.0.1:9333/json/version
+# 没响应 → 自动启动浏览器：
 
-# 检查 OpenCLI（可选）
-where opencli 2>nul && opencli --version
+# Windows: 找 Chrome 或 Edge
+for /f "tokens=*" %%p in ('where chrome.exe 2^>nul') do set "BP=%%p"
+if not defined BP for /f "tokens=*" %%p in ('where msedge.exe 2^>nul') do set "BP=%%p"
+start "" "%BP%" --remote-debugging-port=9333 --no-first-run --user-data-dir="%TEMP%\opensearch-profile"
 
-# 检查 Browser Harness
-where browser-harness 2>nul && browser-harness --version
+# macOS/Linux:
+google-chrome --remote-debugging-port=9333 --no-first-run --user-data-dir=/tmp/opensearch-profile &
+# 或
+/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9333 --no-first-run --user-data-dir=/tmp/opensearch-profile &
+
+# 等待就绪
+sleep 5
+
+# 2. OpenCLI 装了吗？
+where opencli 2>nul
+# 没装 → 自动装：
+npm install -g @jackwener/opencli
+
+# 3. Browser Harness 装了吗？
+where browser-harness 2>nul
+# 没装 → 自动装：
+pip install browser-harness
 ```
 
-如果环境未就绪：
-1. 浏览器未运行 → 双击 `start-browser.bat`
-2. OpenCLI 扩展未连接 → 不影响，Browser Harness 可独立工作
-3. Browser Harness 未安装 → 运行 `check-and-install.bat`
+### 步骤2：路由搜索
 
-### 步骤2：路由决策
+解析用户请求，提取网站和关键词：
 
-解析用户请求，提取：
-- **网站名**：从请求中识别
-- **关键词**：搜索内容
-- **排序方式**：如有指定
+| 用户说的 | 映射到 |
+|----------|--------|
+| B站、bilibili、哔哩哔哩 | bilibili |
+| YouTube、油管 | youtube |
+| 知乎、zhihu | zhihu |
+| 小红书、xhs | xiaohongshu |
+| 淘宝、taobao | taobao |
+| 没指定网站 + 视频类 | bilibili |
+| 没指定网站 + 其他 | google |
 
-检查 OpenCLI 适配器：
+**路由决策：**
+
 ```bash
-opencli <site> --help
-# 退出码0 = 有适配器
-# 非0 = 无适配器，用 Browser Harness
+# 检查 OpenCLI 适配器
+opencli <site> --help 2>nul
+# 有适配器 → 用 OpenCLI（结构化数据，最快）
+# 没有 → 用 Browser Harness
 ```
 
-### 步骤3A：OpenCLI 执行
-
+**OpenCLI 路径：**
 ```bash
 opencli <site> search "<query>" --limit 10 -f json
 ```
 
-### 步骤3B：Browser Harness 兜底
-
+**Browser Harness 路径：**
 ```bash
 BU_CDP_PORT=9333 browser-harness <<'PY'
 ensure_real_tab()
-navigate("https://example.com/search?q=关键词")
+navigate("https://目标网站搜索URL")
 wait(5)
-text = js("document.body.innerText.substring(0, 5000)")
-print(text)
+print(js("document.body.innerText.substring(0, 5000)"))
 PY
 ```
 
-常用网站搜索URL：
-| 网站 | URL模板 |
-|------|---------|
+常用搜索URL：
+| 网站 | URL |
+|------|-----|
 | Google | `https://www.google.com/search?q={kw}` |
-| Bing | `https://www.bing.com/search?q={kw}` |
-| 百度 | `https://www.baidu.com/s?wd={kw}` |
 | Bilibili | `https://search.bilibili.com/all?keyword={kw}` |
 | YouTube | `https://www.youtube.com/results?search_query={kw}` |
 | GitHub | `https://github.com/search?q={kw}` |
 | 知乎 | `https://www.zhihu.com/search?type=content&q={kw}` |
-| 小红书 | `https://www.xiaohongshu.com/search_result?keyword={kw}` |
 
-### 步骤4：结果格式化
+### 步骤3：返回结果
 
 ```
-搜索结果 - <网站名>
-查询：<关键词>
-来源：<opencli|browser-harness>
+搜索结果 - <网站>
+来源: <opencli|browser-harness>
 
 1. <标题>
-   <摘要/作者/日期>
+   <信息>
    <链接>
 ```
 
-## 网站识别规则
+## 首次调用检测
 
-| 关键词 | 映射网站 |
-|--------|----------|
-| B站、bilibili、哔哩哔哩 | bilibili |
-| YouTube、油管、yt | youtube |
-| GitHub、gh、代码 | github |
-| 知乎、zhihu | zhihu |
-| 小红书、xhs | xiaohongshu |
-| 淘宝、taobao | taobao |
-| Google、谷歌 | google |
-| 百度、baidu | baidu |
-| 微博、weibo | weibo |
-| 抖音、douyin | douyin |
-| （无明确网站） | bilibili（视频类）/ google（其他） |
+每次调用时执行 `opencli doctor` 检查扩展状态：
+- **未连接** → 提示用户在 `chrome://extensions` 启用扩展
+- **已连接** → 正常双引擎模式
+- 提醒不阻断搜索，Browser Harness 可独立工作
 
 ## 错误处理
 
-```
-OpenCLI 失败？
-  → 自动回退到 Browser Harness
-
-Browser Harness 也失败？
-  → 检查浏览器是否运行
-  → 检查 CDP 端口是否可达
-  → 建议用户重启浏览器
-```
-
-## 示例
-
-```
-用户：/opensearch 帮我去找一部有关友情的短视频
-→ 识别：视频类，无指定网站 → 默认 bilibili
-→ 执行：opencli bilibili search "友情 短视频" --limit 10 -f json
-→ 返回：结构化视频列表
-
-用户：用开放搜索来搜一下淘宝上的机械键盘
-→ 识别：电商，网站=淘宝
-→ 执行：opencli taobao search "机械键盘" -f json
-→ 返回：商品列表
-
-用户：/opensearch 搜一下某个没适配器的网站
-→ 无适配器 → browser-harness 兜底
-```
+- OpenCLI 失败 → 自动回退 Browser Harness
+- 浏览器没跑 → 自动启动
+- 依赖没装 → 自动安装
+- 全部失败 → 报告错误，建议检查网络
