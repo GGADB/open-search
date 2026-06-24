@@ -48,31 +48,30 @@ curl -s http://127.0.0.1:9333/json/version
 cat "%LOCALAPPDATA%\Google\Chrome\User Data\DevToolsActivePort" 2>/dev/null
 # 读取端口号，尝试连接
 
-# 3. 都不行 → 提示用户重启浏览器（带 CDP 参数）
-# 关键：必须先关闭 Chrome，再用以下命令启动：
-# Windows:
-"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9333 --remote-allow-origins=* --user-data-dir="%LOCALAPPDATA%\Google\Chrome\User Data"
-# 或 Edge:
-"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --remote-debugging-port=9333 --remote-allow-origins=* --user-data-dir="%LOCALAPPDATA%\Microsoft\Edge\User Data"
-
-# macOS:
-open -a "Google Chrome" --args --remote-debugging-port=9333
-
-# Linux:
-google-chrome --remote-debugging-port=9333 &
+# 3. 都不行 → Chrome 没有开启 CDP，需要引导用户重启
 ```
+
+**当 CDP 不可用时，Agent 必须引导用户完成一次性设置：**
+
+1. 告诉用户："需要重启 Chrome 才能使用搜索功能，这是一次性设置"
+2. 让用户关闭 Chrome（包括系统托盘）
+3. 让用户在终端执行以下命令：
+
+```bash
+# Windows Chrome:
+! "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9333 --remote-allow-origins=* --user-data-dir="C:\Users\21731\AppData\Local\Google\Chrome\User Data"
+
+# Windows Edge:
+! "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --remote-debugging-port=9333 --remote-allow-origins=* --user-data-dir="C:\Users\21731\AppData\Local\Microsoft\Edge\User Data"
+```
+
+4. Chrome 打开后，Agent 自动连接（用户的登录态、扩展、书签全在）
+5. **后续使用：** Chrome 保持运行即可，Agent 每次自动连接，不需要再重启
 
 **为什么不能自动启动新实例？**
 - Chrome 已经在运行时，新实例无法绑定 CDP 端口
 - 新实例用 `--user-data-dir` 会创建空配置，丢失登录态
 - 只有关闭 Chrome 后用用户默认配置重启，才能同时保留登录态 + 启用 CDP
-
-**用户首次使用流程：**
-1. 关闭 Chrome（包括系统托盘）
-2. 在终端执行上面的启动命令
-3. Chrome 打开后，agent 自动连接（用户的登录态、扩展、书签全在）
-
-**后续使用：** Chrome 保持带 CDP 参数运行即可，agent 每次自动连接。
 
 # 2. OpenCLI 装了吗？
 where opencli 2>nul
