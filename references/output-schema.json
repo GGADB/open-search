@@ -1,0 +1,217 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Open Search 输出格式",
+  "description": "开放搜索skill的标准化输出格式",
+  "type": "object",
+  "required": ["source", "query", "results", "metadata"],
+  "properties": {
+    "source": {
+      "type": "string",
+      "enum": ["opencli", "browser-harness"],
+      "description": "搜索引擎来源"
+    },
+    "query": {
+      "type": "string",
+      "description": "用户搜索词"
+    },
+    "site": {
+      "type": "string",
+      "description": "目标网站名"
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/SearchResult"
+      },
+      "description": "搜索结果列表"
+    },
+    "metadata": {
+      "$ref": "#/definitions/Metadata",
+      "description": "元数据信息"
+    },
+    "error": {
+      "$ref": "#/definitions/Error",
+      "description": "错误信息（仅错误响应）"
+    }
+  },
+  "definitions": {
+    "SearchResult": {
+      "type": "object",
+      "required": ["title", "url"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "结果标题"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "结果链接"
+        },
+        "snippet": {
+          "type": "string",
+          "description": "结果摘要"
+        },
+        "metadata": {
+          "$ref": "#/definitions/ResultMetadata",
+          "description": "额外元数据"
+        }
+      }
+    },
+    "ResultMetadata": {
+      "type": "object",
+      "properties": {
+        "author": {
+          "type": "string",
+          "description": "作者"
+        },
+        "date": {
+          "type": "string",
+          "format": "date",
+          "description": "发布日期"
+        },
+        "score": {
+          "type": "number",
+          "description": "评分/点赞数"
+        },
+        "comments": {
+          "type": "number",
+          "description": "评论数"
+        },
+        "views": {
+          "type": "number",
+          "description": "浏览数"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "标签列表"
+        }
+      }
+    },
+    "Metadata": {
+      "type": "object",
+      "required": ["total", "engine", "trigger", "timestamp", "duration"],
+      "properties": {
+        "total": {
+          "type": "number",
+          "minimum": 0,
+          "description": "结果总数"
+        },
+        "engine": {
+          "type": "string",
+          "enum": ["opencli", "browser-harness"],
+          "description": "使用的引擎"
+        },
+        "trigger": {
+          "type": "string",
+          "enum": ["auto", "manual"],
+          "description": "触发方式"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601时间戳"
+        },
+        "duration": {
+          "type": "number",
+          "minimum": 0,
+          "description": "搜索耗时（秒）"
+        },
+        "pagination": {
+          "$ref": "#/definitions/Pagination",
+          "description": "分页信息"
+        },
+        "fallback_reason": {
+          "type": "string",
+          "description": "回退原因（仅自动触发）"
+        },
+        "fallback_chain": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "回退链（仅多次回退）"
+        }
+      }
+    },
+    "Pagination": {
+      "type": "object",
+      "properties": {
+        "current_page": {
+          "type": "number",
+          "minimum": 1,
+          "description": "当前页码"
+        },
+        "total_pages": {
+          "type": "number",
+          "minimum": 1,
+          "description": "总页数"
+        },
+        "has_next": {
+          "type": "boolean",
+          "description": "是否有下一页"
+        },
+        "has_prev": {
+          "type": "boolean",
+          "description": "是否有上一页"
+        }
+      }
+    },
+    "Error": {
+      "type": "object",
+      "required": ["code", "message", "engine"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "错误代码"
+        },
+        "message": {
+          "type": "string",
+          "description": "错误信息"
+        },
+        "engine": {
+          "type": "string",
+          "enum": ["opencli", "browser-harness"],
+          "description": "发生错误的引擎"
+        },
+        "details": {
+          "type": "object",
+          "properties": {
+            "site": {
+              "type": "string",
+              "description": "目标网站"
+            },
+            "query": {
+              "type": "string",
+              "description": "搜索词"
+            },
+            "exit_code": {
+              "type": "number",
+              "description": "退出码"
+            },
+            "stderr": {
+              "type": "string",
+              "description": "标准错误输出"
+            },
+            "url": {
+              "type": "string",
+              "format": "uri",
+              "description": "请求URL"
+            },
+            "selector": {
+              "type": "string",
+              "description": "失败的CSS选择器"
+            },
+            "suggestion": {
+              "type": "string",
+              "description": "建议操作"
+            }
+          }
+        }
+      }
+    }
+  }
+}

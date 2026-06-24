@@ -1,0 +1,37 @@
+# Dependencies
+.dependencies/
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Vendor (external repos, downloaded by install script)
+vendor/OpenCLI/
+vendor/browser-harness/
+
+# Chrome profile (user data)
+chrome-debug-profile/
+open-search-chrome/
+open-search-edge/
+user-data-dir/
+
+# Logs
+*.log
+install.log
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Lock file
+.installed
