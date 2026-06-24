@@ -51,22 +51,16 @@ cat "%LOCALAPPDATA%\Google\Chrome\User Data\DevToolsActivePort" 2>/dev/null
 # 3. 都不行 → Chrome 没有开启 CDP，需要引导用户重启
 ```
 
-**当 CDP 不可用时，Agent 必须引导用户完成一次性设置：**
-
-1. 告诉用户："需要重启 Chrome 才能使用搜索功能，这是一次性设置"
-2. 让用户关闭 Chrome（包括系统托盘）
-3. 让用户在终端执行以下命令：
+**当 CDP 不可用时，Agent 引导用户一键重启：**
 
 ```bash
-# Windows Chrome:
-! "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9333 --remote-allow-origins=* --user-data-dir="C:\Users\21731\AppData\Local\Google\Chrome\User Data"
-
-# Windows Edge:
-! "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --remote-debugging-port=9333 --remote-allow-origins=* --user-data-dir="C:\Users\21731\AppData\Local\Microsoft\Edge\User Data"
+# 用户只需执行一行命令（Agent 帮忙生成）
+"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9333 --remote-allow-origins=* --user-data-dir="%LOCALAPPDATA%\Google\Chrome\User Data"
 ```
 
-4. Chrome 打开后，Agent 自动连接（用户的登录态、扩展、书签全在）
-5. **后续使用：** Chrome 保持运行即可，Agent 每次自动连接，不需要再重启
+或者双击 `restart-chrome-cdp.bat` 一键重启。
+
+**关键：Chrome 保持运行，以后 Agent 自动连接，不需要再重启。**
 
 **为什么不能自动启动新实例？**
 - Chrome 已经在运行时，新实例无法绑定 CDP 端口
